@@ -1,0 +1,20 @@
+# deps
+node_modules/
+
+# secrets — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# personal data — real profile (resume/phone/email/salary) stays LOCAL only.
+# The public repo ships placeholder templates in profile.example/ instead.
+profile/
+
+# build
+dist/
+.netlify/
+.next/
+
+# os / editor
+.DS_Store
+*.log
