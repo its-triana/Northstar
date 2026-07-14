@@ -68,10 +68,13 @@ Built in strict, sequential phases — each one runs before the next starts.
 prd/            the product spec (the thinking behind the build)
 data/           companies.seed.csv — a curated 158-company starter list
 db/schema.sql   the Postgres schema — run once in Supabase
+.github/        workflows/collect.yml — the hourly collection cron
 src/
-  collectors/   one file per job source
-  lib/          supabase client, discord poster, normalise/dedup helpers, config
-  scripts/      collect.ts — the runnable pipe
+  collectors/   one file per ATS (greenhouse, lever, ashby, workable, recruitee,
+                smartrecruiters) + portals/ (remoteok, remotive, himalayas, wwr,
+                arbeitnow, jobicy, workingnomads, hn)
+  lib/          prefilter, dedup, ats-discovery, supabase client, discord poster
+  scripts/      collect.ts (the pipe) · seed-companies.ts (CSV → DB + ATS discovery)
 profile.example/  placeholder profile (the format the scorer reads)
 profile/          your real profile — git-ignored, never committed
 ```
@@ -107,11 +110,20 @@ cp .env.example .env               # then paste the three values from A and B
 cp -r profile.example profile      # then replace the placeholders with your real resume/portfolio/etc.
 ```
 
-### Run for real
+### D. Seed your target companies
 ```bash
-npm run collect
+npm run seed:companies -- --dry-run   # probe which companies expose a public ATS (no DB write)
+npm run seed:companies                # write tier 1+2 companies + discovered ATS tokens to Supabase
 ```
-Success = new rows in Supabase `jobs` and a message in Discord `#alerts`. Run it again a minute later and it writes 0 new jobs and posts nothing — dedup works, and silence is intentional.
+
+### E. Run the pipe
+```bash
+npm run collect -- --tiers=1,2     # or plain `npm run collect` for the hour-based stagger
+```
+Success = new rows in Supabase `jobs` (survivors *and* audited kills) and the surviving roles posted to Discord `#alerts`. Run it again a minute later: 0 new rows, no post — dedup works, and silence is intentional.
+
+### F. Turn on the hourly cron (GitHub Actions)
+Repo → **Settings → Secrets and variables → Actions → New repository secret**, add the same three values as `.env`: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DISCORD_WEBHOOK_URL`. The [`collect` workflow](.github/workflows/collect.yml) then runs hourly on its own (tier 1 hourly, tier 2 every 4h, tier 3 daily, portals every 2h). Trigger it manually once from the **Actions** tab to verify.
 
 </details>
 
