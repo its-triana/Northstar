@@ -1,4 +1,4 @@
-# Job Track OS
+# Finding the right opportunity ✨
 
 **A private, always-on system that catches design roles within an hour of posting, scores each against my actual resume + portfolio, researches the company's culture before I ever apply, and pushes only the ones worth acting on to Discord — for ₹0/month.**
 
