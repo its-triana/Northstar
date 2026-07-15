@@ -7,7 +7,7 @@ Built by a product designer to run a real job search, and to be honest about the
 1. **Speed** — know about the right role within an hour of it going live, before the applicant pile forms.
 2. **Judgment** — never apply somewhere that'll make me miserable, and never *miss* one that wouldn't. The culture research is half the product, not a garnish.
 
-`TypeScript` · `Node 20` · `Supabase (Postgres)` · `GitHub Actions` · `Discord` · `Netlify` · runs at **₹0/month**
+`TypeScript` · `Node 22` · `Supabase (Postgres)` · `GitHub Actions` · `Discord` · `Netlify` · runs at **₹0/month**
 
 ---
 
@@ -83,7 +83,7 @@ profile/          your real profile — git-ignored, never committed
 
 ## Run it yourself
 
-**Prerequisites:** Node.js 20+ and (for the real run) free Supabase + Discord accounts.
+**Prerequisites:** Node.js 22+ and (for the real run) free Supabase + Discord accounts.
 
 ```bash
 npm install
