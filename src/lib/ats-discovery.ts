@@ -2,11 +2,31 @@
 // public endpoint against slugified name variants. First hit wins. This is what
 // turns the seed CSV — which has no tokens — into directly-pollable companies,
 // and later powers the Phase 4 discovery loop for portal-found companies.
+//
+// Validation note: Greenhouse/Lever/Ashby/Recruitee 404 unknown tokens, so a
+// 200 with the right shape is a trustworthy match (even an empty board = a real
+// company between postings, worth polling). Workable and SmartRecruiters instead
+// return a friendly {name, jobs:[]} / {content:[], totalFound:0} for ANY reserved
+// token — so for those two we require at least one live posting to avoid matching
+// placeholder accounts (e.g. workable "amazon"/"visa" are empty squatters).
 
 export interface AtsMatch {
   atsType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'recruitee' | 'smartrecruiters';
   token: string;
 }
+
+// Generic one-word company names collide with whoever registered that slug first.
+// These are confirmed wrong-company matches (verified by inspecting the postings),
+// so we force them to "not found" rather than attribute a stranger's jobs to Ana's
+// target. Add a right-hand value to pin a known-correct token instead of skipping.
+const OVERRIDES: Record<string, AtsMatch | null> = {
+  'pine labs': null, // greenhouse:pine → a residential-mortgage company
+  'fi money': null, // lever:fi → unrelated (paid-search/marketing roles)
+  navi: null, // ashby:navi → a hardware startup
+  slice: null, // greenhouse:slice → US pizza-tech, not the Indian card
+  zeta: null, // lever:zeta → Zeta Global (US adtech), not the Indian bank-infra co
+  salesforce: null, // recruitee:salesforce → a Recruitee demo account ("(Sample)")
+};
 
 function slugVariants(name: string, domain?: string): string[] {
   const base = name.toLowerCase().trim();
@@ -19,60 +39,67 @@ function slugVariants(name: string, domain?: string): string[] {
   return [...variants].filter((v) => v.length >= 2);
 }
 
-async function probe(url: string, validate: (body: string) => boolean): Promise<boolean> {
+async function probe(url: string, validate: (json: unknown) => boolean): Promise<boolean> {
   try {
     const res = await fetch(url, {
       headers: { accept: 'application/json' },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return false;
-    const body = await res.text();
-    return validate(body);
+    const json = JSON.parse(await res.text());
+    return validate(json);
   } catch {
-    return false;
+    return false; // network error, timeout, or non-JSON body → not a match
   }
 }
+
+type Json = Record<string, unknown> & { jobs?: unknown[]; offers?: unknown[]; content?: unknown[]; totalFound?: number };
 
 const PROBES: {
   atsType: AtsMatch['atsType'];
   url: (t: string) => string;
-  validate: (body: string) => boolean;
+  validate: (j: unknown) => boolean;
 }[] = [
   {
     atsType: 'greenhouse',
     url: (t) => `https://boards-api.greenhouse.io/v1/boards/${t}/jobs`,
-    validate: (b) => b.includes('"jobs"'),
+    validate: (j) => Array.isArray((j as Json).jobs),
   },
   {
     atsType: 'lever',
     url: (t) => `https://api.lever.co/v0/postings/${t}?mode=json`,
-    validate: (b) => b.trimStart().startsWith('['),
+    validate: (j) => Array.isArray(j),
   },
   {
     atsType: 'ashby',
     url: (t) => `https://api.ashbyhq.com/posting-api/job-board/${t}`,
-    validate: (b) => b.includes('"jobs"'),
+    validate: (j) => Array.isArray((j as Json).jobs),
   },
   {
+    // Leaky: returns {name, jobs:[]} for any token — require a live posting.
     atsType: 'workable',
-    url: (t) => `https://apply.workable.com/api/v1/widget/accounts/${t}`,
-    validate: (b) => b.includes('"jobs"') || b.includes('"name"'),
+    url: (t) => `https://apply.workable.com/api/v1/widget/accounts/${t}?details=true`,
+    validate: (j) => Array.isArray((j as Json).jobs) && (j as Json).jobs!.length > 0,
   },
   {
     atsType: 'recruitee',
     url: (t) => `https://${t}.recruitee.com/api/offers/`,
-    validate: (b) => b.includes('"offers"'),
+    validate: (j) => Array.isArray((j as Json).offers),
   },
   {
+    // Leaky: returns {content:[], totalFound:0} for reserved tokens — require postings.
     atsType: 'smartrecruiters',
-    url: (t) => `https://api.smartrecruiters.com/v1/companies/${t}/postings`,
-    validate: (b) => b.includes('"content"'),
+    url: (t) => `https://api.smartrecruiters.com/v1/companies/${t}/postings?limit=1`,
+    validate: (j) => ((j as Json).totalFound ?? 0) > 0 || ((j as Json).content?.length ?? 0) > 0,
   },
 ];
 
 // Tries every ATS × every slug variant. Sequential per company (fast enough for a
 // one-time seed and the weekly discovery loop) — callers parallelise across companies.
 export async function discoverAts(name: string, domain?: string): Promise<AtsMatch | null> {
+  const override = OVERRIDES[name.toLowerCase().trim()];
+  if (override !== undefined) return override; // null = force-skip a known bad slug
+
   for (const variant of slugVariants(name, domain)) {
     for (const p of PROBES) {
       if (await probe(p.url(variant), p.validate)) {
