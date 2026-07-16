@@ -7,11 +7,17 @@
 
 import { getSupabase } from '../lib/supabase.js';
 import { postEmbeds, type Embed } from '../lib/discord.js';
+import { env } from '../lib/config.js';
 
 function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit?.slice(name.length + 3);
 }
+
+// Phase 4: with a bot + digest channel configured, each role becomes its own
+// card with Applied / Dismiss / Details / Open role buttons. Without them we
+// fall back to the Phase 3 webhook embeds (read-only).
+const BOT_MODE = !!(env('DISCORD_BOT_TOKEN') && env('DISCORD_CHANNEL_DIGEST'));
 
 function color(score: number): number {
   if (score >= 8.5) return 0x2ecc71; // green — drop everything
@@ -78,8 +84,33 @@ async function main(): Promise<void> {
     (suppressed ? ` · ${suppressed} not-eligible hidden` : '') +
     (killCount ? ` · prefilter killed ${killCount} in ${hours}h` : '');
 
-  await postEmbeds(embeds, header);
-  console.log(`[digest] posted ${embeds.length} scored roles (${suppressed} suppressed).`);
+  if (!BOT_MODE) {
+    await postEmbeds(embeds, header);
+    console.log(`[digest] posted ${embeds.length} scored roles via webhook (${suppressed} suppressed).`);
+    return;
+  }
+
+  // Bot mode: one card per role, each with its action buttons.
+  const { postCard } = await import('../lib/discord-rest.js');
+  const { requireEnv } = await import('../lib/config.js');
+  const channel = requireEnv('DISCORD_CHANNEL_DIGEST');
+  await postCard(channel, [], [], header);
+  for (let k = 0; k < visible.length; k++) {
+    const j = visible[k];
+    const ref = await postCard(channel, [embeds[k]], [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 3, label: 'Applied', custom_id: `job:applied:${j.id}` },
+          { type: 2, style: 4, label: 'Dismiss', custom_id: `job:dismiss:${j.id}` },
+          { type: 2, style: 2, label: 'Details', custom_id: `job:details:${j.id}` },
+          { type: 2, style: 5, label: 'Open role', url: j.url as string },
+        ],
+      },
+    ]);
+    await sb.from('jobs').update({ discord_message_id: ref }).eq('id', j.id);
+  }
+  console.log(`[digest] posted ${visible.length} interactive cards (${suppressed} suppressed).`);
 }
 
 main().catch((err) => {

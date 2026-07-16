@@ -1,0 +1,27 @@
+# Monday morning discovery digest: portal-found candidate companies with
+# surviving roles get approve/reject cards in #discoveries.
+name: discoveries
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # Mondays 04:00 UTC = 09:30 IST
+  workflow_dispatch: {}
+
+jobs:
+  discoveries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run discoveries
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_DISCOVERIES: ${{ secrets.DISCORD_CHANNEL_DISCOVERIES }}

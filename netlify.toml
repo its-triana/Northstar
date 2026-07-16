@@ -1,0 +1,7 @@
+# Netlify config — only functions for now (the Phase 6 dashboard adds a build).
+[build]
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

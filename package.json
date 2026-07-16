@@ -15,10 +15,13 @@
     "score:save": "tsx src/scripts/job-save-score.ts",
     "score:digest": "tsx src/scripts/digest-post.ts",
     "nudges": "tsx src/scripts/nudges.ts",
+    "discoveries": "tsx src/scripts/discoveries.ts",
+    "register:commands": "tsx src/scripts/register-commands.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
+    "discord-interactions": "^4.1.0",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
