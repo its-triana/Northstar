@@ -11,7 +11,9 @@
 // placeholder accounts (e.g. workable "amazon"/"visa" are empty squatters).
 
 export interface AtsMatch {
-  atsType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'recruitee' | 'smartrecruiters';
+  // 'workday' is never probe-discovered (tokens are tenant|host|site triples,
+  // unguessable from a name) — it only enters via hand-verified OVERRIDES pins.
+  atsType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'recruitee' | 'smartrecruiters' | 'workday';
   token: string;
 }
 
@@ -26,6 +28,13 @@ const OVERRIDES: Record<string, AtsMatch | null> = {
   slice: null, // greenhouse:slice → US pizza-tech, not the Indian card
   zeta: null, // lever:zeta → Zeta Global (US adtech), not the Indian bank-infra co
   salesforce: null, // recruitee:salesforce → a Recruitee demo account ("(Sample)")
+  // Hand-verified pins (found by reading the careers pages, not slug guessing).
+  // 'workday' tokens are tenant|host|site — see collectors/workday.ts.
+  razorpay: { atsType: 'greenhouse', token: 'razorpaysoftwareprivatelimited' },
+  paypal: { atsType: 'workday', token: 'paypal|paypal.wd1.myworkdayjobs.com|jobs' },
+  adobe: { atsType: 'workday', token: 'adobe|adobe.wd5.myworkdayjobs.com|external_experienced' },
+  mastercard: { atsType: 'workday', token: 'mastercard|mastercard.wd1.myworkdayjobs.com|CorporateCareers' },
+  'target india': { atsType: 'workday', token: 'target|target.wd5.myworkdayjobs.com|targetcareers' },
 };
 
 function slugVariants(name: string, domain?: string): string[] {

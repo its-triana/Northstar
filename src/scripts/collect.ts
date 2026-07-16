@@ -23,6 +23,7 @@ import { fetchAshby } from '../collectors/ashby.js';
 import { fetchWorkable } from '../collectors/workable.js';
 import { fetchRecruitee } from '../collectors/recruitee.js';
 import { fetchSmartRecruiters } from '../collectors/smartrecruiters.js';
+import { fetchWorkday } from '../collectors/workday.js';
 import { fetchRemoteOk } from '../collectors/portals/remoteok.js';
 import { fetchRemotive } from '../collectors/portals/remotive.js';
 import { fetchHimalayas } from '../collectors/portals/himalayas.js';
@@ -44,6 +45,7 @@ const ATS_FETCHERS: Record<string, (name: string, token: string) => Promise<Coll
   workable: fetchWorkable,
   recruitee: fetchRecruitee,
   smartrecruiters: fetchSmartRecruiters,
+  workday: fetchWorkday,
 };
 
 const PORTAL_FETCHERS: Record<string, () => Promise<CollectedJob[]>> = {
@@ -67,6 +69,8 @@ const DRY_RUN_COMPANIES = [
   { id: 'dry-5', name: 'Meesho', tier: 2, atsType: 'lever', atsToken: 'meesho' },
   { id: 'dry-6', name: 'Notion', tier: 1, atsType: 'ashby', atsToken: 'notion' },
   { id: 'dry-7', name: 'Ramp', tier: 2, atsType: 'ashby', atsToken: 'ramp' },
+  { id: 'dry-8', name: 'Razorpay', tier: 1, atsType: 'greenhouse', atsToken: 'razorpaysoftwareprivatelimited' },
+  { id: 'dry-9', name: 'PayPal', tier: 2, atsType: 'workday', atsToken: 'paypal|paypal.wd1.myworkdayjobs.com|jobs' },
 ];
 
 function tiersForThisRun(): number[] {
