@@ -1,0 +1,25 @@
+# Daily 9am IST nudges (no LLM, free): "N roles waiting to be scored" and
+# stale-application reminders. Posts nothing when there's nothing to say.
+name: nudges
+
+on:
+  schedule:
+    - cron: '30 3 * * *' # 03:30 UTC = 09:00 IST
+  workflow_dispatch: {}
+
+jobs:
+  nudges:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run nudges
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

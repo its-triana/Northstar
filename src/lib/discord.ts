@@ -7,6 +7,35 @@ export interface RawJobLine {
   url: string;
 }
 
+// Minimal Discord embed shape (subset we use).
+export interface Embed {
+  title: string;
+  url?: string;
+  description?: string;
+  color?: number;
+  fields?: { name: string; value: string; inline?: boolean }[];
+  footer?: { text: string };
+}
+
+// Post rich embeds via the webhook, chunked to Discord's 10-embeds-per-message cap.
+export async function postEmbeds(embeds: Embed[], content?: string): Promise<void> {
+  if (embeds.length === 0 && !content) return;
+  const webhook = requireEnv('DISCORD_WEBHOOK_URL');
+  for (let i = 0; i < Math.max(embeds.length, 1); i += 10) {
+    const body: Record<string, unknown> = {
+      username: 'Job Track OS',
+      embeds: embeds.slice(i, i + 10),
+    };
+    if (i === 0 && content) body.content = content;
+    const res = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Discord embeds failed: HTTP ${res.status} ${await res.text()}`);
+  }
+}
+
 // Phase 1: post a plain list of freshly-collected roles to the Discord webhook.
 // Rich embeds, buttons and per-tier routing arrive in Phase 3/4.
 export async function postRawList(jobs: RawJobLine[]): Promise<void> {

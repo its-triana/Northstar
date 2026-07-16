@@ -9,6 +9,12 @@
   "scripts": {
     "collect": "tsx src/scripts/collect.ts",
     "seed:companies": "tsx src/scripts/seed-companies.ts",
+    "seed:profile": "tsx src/scripts/seed-profile.ts",
+    "score:pending": "tsx src/scripts/jobs-unscored.ts",
+    "score:save-dossier": "tsx src/scripts/dossier-save.ts",
+    "score:save": "tsx src/scripts/job-save-score.ts",
+    "score:digest": "tsx src/scripts/digest-post.ts",
+    "nudges": "tsx src/scripts/nudges.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

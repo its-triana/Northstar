@@ -56,8 +56,8 @@ flowchart LR
 Built in strict, sequential phases — each one runs before the next starts.
 
 - [x] **Phase 1 — the pipe is alive.** ATS collector → Supabase → Discord, proven end-to-end.
-- [ ] **Phase 2 — breadth + filter.** All six ATS collectors + free job portals, two-pass dedup, the deterministic prefilter, and the hourly GitHub Actions cron.
-- [ ] **Phase 3 — the brain.** Company culture dossier, eligibility model, and the calibrated fit scorer, as rich Discord digests.
+- [x] **Phase 2 — breadth + filter.** All six ATS collectors + free job portals, two-pass dedup, the deterministic prefilter, and the hourly GitHub Actions cron.
+- [x] **Phase 3 — the brain.** Company culture dossier, eligibility model, and the calibrated fit scorer, as rich Discord digests.
 - [ ] **Phase 4 — the loop closes.** Discord buttons / modals / slash commands, card-in-place editing, a discovery loop that grows the company list.
 - [ ] **Phase 5 — auto-status.** Read-only inbox scan advances a role's status from recruiter emails, with the source shown.
 - [ ] **Phase 6 — dashboard.** A private Next.js dashboard on Netlify, reading through serverless functions.
