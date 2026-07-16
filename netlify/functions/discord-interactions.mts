@@ -146,7 +146,7 @@ async function showDetails(i: any, jobId: string): Promise<Response> {
   if (intel) {
     const cq = (k: string, label: string) => {
       const v = intel[k];
-      return v ? `• ${label}: **${v.verdict}** (${v.confidence})${v.evidence?.length ? ` — ${v.evidence[0]}` : ''}` : null;
+      return v ? `• ${label}: **${humanize(v.verdict)}** (${confidenceNote(v.confidence)})${v.evidence?.length ? ` — ${v.evidence[0]}` : ''}` : null;
     };
     const culture = [
       cq('weekend_work', 'Weekend work'), cq('six_day_week', 'Six-day week'),
@@ -252,7 +252,7 @@ async function onCommand(i: any): Promise<Response> {
     if (!intel) return ephemeral(`**${cos[0].name}** — no dossier yet. It's built on the next /score run that sees one of its roles.`);
     const cq = (k: string, label: string) => {
       const v = intel[k];
-      return v ? `• ${label}: **${v.verdict}** (${v.confidence})` : `• ${label}: —`;
+      return v ? `• ${label}: **${humanize(v.verdict)}** (${confidenceNote(v.confidence)})` : `• ${label}: —`;
     };
     return ephemeral(
       [
@@ -287,6 +287,32 @@ async function onCommand(i: any): Promise<Response> {
     });
   }
   return ephemeral('Unknown command.');
+}
+
+// ---- presentation ----------------------------------------------------------
+// The DB stores machine-readable verdict codes (the scorer applies hard rules
+// to them). Humans get English. Unknown codes fall back to de-underscoring.
+const VERDICT_LABELS: Record<string, string> = {
+  no: 'No',
+  yes: 'Yes',
+  no_signal: 'No signal either way',
+  some_signal: 'Some signal — worth watching',
+  some_complaints: 'Some complaints',
+  recurring_complaints: 'Recurring complaints ⚠️',
+  thin_data: 'Not enough data to judge',
+  mixed: 'Mixed reports',
+  negative_leaning: 'Leans negative',
+  generally_positive: 'Generally positive',
+  has_india_office: 'Has an India office',
+  significant_india_presence: 'Significant India presence',
+  yes_remote: 'Hires remotely incl. India',
+  relocates_to_nl: 'Relocates internationally (to Amsterdam)',
+};
+function humanize(code: string): string {
+  return VERDICT_LABELS[code] ?? code.replace(/_/g, ' ');
+}
+function confidenceNote(c: string): string {
+  return { high: 'high confidence', medium: 'medium confidence', low: 'low confidence' }[c] ?? c;
 }
 
 // ---- small helpers ---------------------------------------------------------
