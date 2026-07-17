@@ -18,16 +18,26 @@ export interface ButtonRow {
 }
 
 async function rest(method: string, path: string, body?: unknown): Promise<Record<string, unknown>> {
-  const res = await fetch(`${API}${path}`, {
-    method,
-    headers: {
-      authorization: `Bot ${requireEnv('DISCORD_BOT_TOKEN')}`,
-      'content-type': 'application/json',
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`discord ${method} ${path}: HTTP ${res.status} ${await res.text()}`);
-  return res.status === 204 ? {} : ((await res.json()) as Record<string, unknown>);
+  // Discord rate-limits bursts (~5 msgs/5s per channel). On 429, wait the
+  // advertised retry_after and try again rather than dying mid-digest.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${API}${path}`, {
+      method,
+      headers: {
+        authorization: `Bot ${requireEnv('DISCORD_BOT_TOKEN')}`,
+        'content-type': 'application/json',
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (res.status === 429 && attempt < 5) {
+      const data = (await res.json().catch(() => ({}))) as { retry_after?: number };
+      const waitMs = Math.ceil(((data.retry_after ?? 1) + 0.25) * 1000);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+    if (!res.ok) throw new Error(`discord ${method} ${path}: HTTP ${res.status} ${await res.text()}`);
+    return res.status === 204 ? {} : ((await res.json()) as Record<string, unknown>);
+  }
 }
 
 // Post a message with embeds + buttons. Returns the message id (store as

@@ -33,7 +33,7 @@ async function main(): Promise<void> {
 
   const { data: jobs, error } = await sb
     .from('jobs')
-    .select('id, title, location, url, fit_score, eligibility, eligibility_reason, culture_flags, fit_reasons, score_status, companies(name, tier)')
+    .select('id, title, location, url, fit_score, eligibility, eligibility_reason, culture_flags, fit_reasons, score_status, discord_message_id, companies(name, tier)')
     .gte('scored_at', since)
     .in('score_status', ['scored', 'score_failed'])
     .order('fit_score', { ascending: false, nullsFirst: false });
@@ -90,13 +90,22 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Bot mode: one card per role, each with its action buttons.
+  // Bot mode: one card per role, each with its action buttons. Cards that
+  // already carry a discord_message_id were posted by a previous (possibly
+  // interrupted) run — skip them so re-runs never duplicate.
   const { postCard } = await import('../lib/discord-rest.js');
   const { requireEnv } = await import('../lib/config.js');
   const channel = requireEnv('DISCORD_CHANNEL_DIGEST');
+  const pending = visible.filter((j) => !j.discord_message_id);
+  if (pending.length === 0) {
+    console.log('[digest] all scored cards already posted — nothing to do.');
+    return;
+  }
   await postCard(channel, [], [], header);
   for (let k = 0; k < visible.length; k++) {
     const j = visible[k];
+    if (j.discord_message_id) continue; // already on the board
+    await new Promise((r) => setTimeout(r, 400)); // stay under the burst limit
     const ref = await postCard(channel, [embeds[k]], [
       {
         type: 1,
@@ -110,7 +119,7 @@ async function main(): Promise<void> {
     ]);
     await sb.from('jobs').update({ discord_message_id: ref }).eq('id', j.id);
   }
-  console.log(`[digest] posted ${visible.length} interactive cards (${suppressed} suppressed).`);
+  console.log(`[digest] posted ${pending.length} interactive cards (${visible.length - pending.length} already posted, ${suppressed} suppressed).`);
 }
 
 main().catch((err) => {
