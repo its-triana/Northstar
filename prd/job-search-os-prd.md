@@ -88,7 +88,7 @@ The list grows itself. Reject aggressively: portals are full of staffing agencie
 ## 5. Non-goals
 
 - **No web dashboard until Phase 5.** Discord is the interface first. The dashboard is built *after* the loop works, against real data.
-- **No Gmail integration.** Ships as v1.5, after this.
+- **No Gmail integration.** Cut from scope entirely (owner's call): status updates stay deliberate, human taps on the card — the tracker never reads the inbox.
 - **No AI/design news feed.** Content consumption, not job search.
 - **No standalone profile-rating engine.** That analysis was done once, by hand. Its output is `/profile`, which is an *input* here.
 - **No interview audio upload or transcription.** Different product, zero shared code.
@@ -474,7 +474,6 @@ GitHub Actions secrets for the collector. Netlify env vars for the functions. **
 
 ## 17. Deferred (v2+)
 
-- **Gmail read-only integration** for automatic status updates. First thing after this ships.
 - **Score recalibration from outcomes.** After ~25 applications the tracker knows which fit-scores actually converted to interviews *for Ana*. Feed that back into the scorer. No commercial tool does this. It is the differentiator and the build-log story.
 - Generic careers-page fetcher with LLM extraction, for Indian companies on Darwinbox, Keka, or custom pages.
 - Interview recording upload, transcription, feedback analysis. Separate product.

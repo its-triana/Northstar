@@ -59,7 +59,7 @@ Built in strict, sequential phases — each one runs before the next starts.
 - [x] **Phase 2 — breadth + filter.** All six ATS collectors + free job portals, two-pass dedup, the deterministic prefilter, and the hourly GitHub Actions cron.
 - [x] **Phase 3 — the brain.** Company culture dossier, eligibility model, and the calibrated fit scorer, as rich Discord digests.
 - [x] **Phase 4 — the loop closes.** Discord buttons / modals / slash commands, card-in-place editing, a discovery loop that grows the company list.
-- [ ] **Phase 5 — auto-status.** Read-only inbox scan advances a role's status from recruiter emails, with the source shown.
+- [x] **Phase 5 — the India layer.** A Workday collector, hand-verified ATS pins for companies hiding their boards, and a budget-disciplined Google Jobs sweep covering the Naukri/LinkedIn-tier Indian market — still ₹0/month.
 - [ ] **Phase 6 — dashboard.** A private Next.js dashboard on Netlify, reading through serverless functions.
 
 ## Repo layout
