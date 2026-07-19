@@ -14,6 +14,7 @@
     "score:save-dossier": "tsx src/scripts/dossier-save.ts",
     "score:save": "tsx src/scripts/job-save-score.ts",
     "score:digest": "tsx src/scripts/digest-post.ts",
+    "score:profile": "tsx src/scripts/profile-get.ts",
     "nudges": "tsx src/scripts/nudges.ts",
     "discoveries": "tsx src/scripts/discoveries.ts",
     "register:commands": "tsx src/scripts/register-commands.ts",

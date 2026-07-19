@@ -17,6 +17,10 @@ Run the morning judgment pass over every unscored survivor, end to end.
    - `src/scoring/rubric.md` — how to score, incl. the 5.9 dealbreaker cap
    And read Ana's profile: `profile/resume.md`, `profile/portfolio.md`,
    `profile/preferences.md` (dealbreakers + comp target live here).
+   **Cloud sessions:** the `profile/` folder is git-ignored (PII) and won't
+   exist in a cloud checkout — load the same content from the database
+   instead: `npm run -s score:profile` (JSON: resume_text, portfolio_cases,
+   linkedin_text, preferences). Never commit or echo its contents into files.
 
 3. **Dossiers:** for each company with `dossier_fresh: false`, research it per
    dossier-prompt.md (web search + public Reddit JSON). Write the dossier JSON to
