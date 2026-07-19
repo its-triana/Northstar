@@ -12,6 +12,7 @@ const KEYS = [
   'DISCORD_CHANNEL_DIGEST',
   'DISCORD_CHANNEL_PIPELINE',
   'DISCORD_CHANNEL_DISCOVERIES',
+  'RAPIDAPI_KEY',
 ] as const;
 
 type EnvKey = (typeof KEYS)[number];

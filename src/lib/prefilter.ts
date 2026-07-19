@@ -19,7 +19,7 @@ const DESIGN_TITLE =
 
 // Wrong seniority in title kills outright (manager+ and intern/junior tracks).
 const WRONG_SENIORITY =
-  /\b(intern|internship|trainee|junior|associate|graduate|principal|director|vp|vice\s+president|head\s+of|manager)\b/i;
+  /\b(intern|internship|trainee|junior|fresher|freshers|associate|graduate|principal|director|vp|vice\s+president|head\s+of|manager)\b/i;
 
 // India location rule: Indian cities other than NCR/Bengaluru kill NON-remote roles.
 // Global onsite is deliberately NOT killed here — eligibility is the scorer's job (PRD §10).

@@ -32,6 +32,7 @@ import { fetchArbeitnow } from '../collectors/portals/arbeitnow.js';
 import { fetchJobicy } from '../collectors/portals/jobicy.js';
 import { fetchWorkingNomads } from '../collectors/portals/workingnomads.js';
 import { fetchHn } from '../collectors/portals/hn.js';
+import { fetchJsearch, jsearchConfigured } from '../collectors/portals/jsearch.js';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const NO_PORTALS = process.argv.includes('--no-portals');
@@ -93,6 +94,15 @@ function portalsThisRun(): boolean {
   return new Date().getUTCHours() % 2 === 0;
 }
 
+// JSearch (India breadth layer) is strictly once daily — free-tier budget.
+// 04:00 UTC = 09:30 IST, so the day's Indian postings land before the digest.
+function jsearchThisRun(): boolean {
+  if (!jsearchConfigured()) return false;
+  if (process.argv.includes('--jsearch')) return true; // manual test override
+  if (DRY_RUN || NO_PORTALS) return false;
+  return new Date().getUTCHours() === 4;
+}
+
 async function main(): Promise<void> {
   const tiers = tiersForThisRun();
   const doPortals = portalsThisRun();
@@ -139,6 +149,16 @@ async function main(): Promise<void> {
         }
       }),
     );
+  }
+
+  if (jsearchThisRun()) {
+    try {
+      const jobs = await fetchJsearch();
+      collected.push(...jobs);
+      console.log(`[collect] jsearch (India)   ${String(jobs.length).padStart(3)} jobs (1 request of the daily budget)`);
+    } catch (err) {
+      console.error(`[collect] jsearch FAILED: ${(err as Error).message}`);
+    }
   }
   console.log(`[collect] ${collected.length} jobs fetched total`);
 
