@@ -155,7 +155,7 @@ async function main(): Promise<void> {
     try {
       const jobs = await fetchJsearch();
       collected.push(...jobs);
-      console.log(`[collect] jsearch (India)   ${String(jobs.length).padStart(3)} jobs (1 request of the daily budget)`);
+      console.log(`[collect] jsearch (India)   ${String(jobs.length).padStart(3)} jobs (2 requests of the daily budget)`);
     } catch (err) {
       console.error(`[collect] jsearch FAILED: ${(err as Error).message}`);
     }

@@ -6,9 +6,10 @@ import { stripHtml } from '../../lib/normalize.js';
 // and custom Indian career pages (Zomato/Zerodha/Flipkart-tier companies that
 // expose no public ATS). This is the India breadth layer.
 //
-// BUDGET DISCIPLINE (free tier): exactly ONE request per call — a single query,
-// one page. The scheduler calls this once daily, ~31 requests/month, far under
-// the free quota. Never loop pages here.
+// BUDGET DISCIPLINE (free tier, 200 req/mo HARD limit): exactly TWO requests
+// per call — two complementary queries, one page each. The scheduler calls
+// this once daily → ~62 requests/month, leaving ~135 headroom (future salary
+// lookups). Never loop pages here.
 
 interface JSearchJob {
   job_id: string;
@@ -27,40 +28,57 @@ export function jsearchConfigured(): boolean {
   return !!env('RAPIDAPI_KEY');
 }
 
+// Two complementary daily sweeps: broad all-India, then a senior/target-city/
+// remote-weighted pass. Google ranks ~10 results per query, so two angles
+// roughly double the daily sample of the bowl.
+const QUERIES = [
+  'product designer or ux designer in India',
+  'senior product designer in Gurgaon or Bengaluru or remote India',
+];
+
 export async function fetchJsearch(): Promise<CollectedJob[]> {
   const key = requireEnv('RAPIDAPI_KEY');
-  // v5 API: the endpoint is /search-v2 (plain /search is v1 and now 404s),
-  // and results nest under data.jobs. Single request — the budget rule.
-  const params = new URLSearchParams({
-    query: 'product designer or ux designer in India',
-    country: 'in',
-    date_posted: '3days', // daily cadence + small overlap; dedup absorbs repeats
-  });
-  const res = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params}`, {
-    headers: {
-      'x-rapidapi-key': key,
-      'x-rapidapi-host': 'jsearch.p.rapidapi.com',
-      accept: 'application/json',
-    },
-  });
-  if (!res.ok) throw new Error(`jsearch HTTP ${res.status}`);
+  const byId = new Map<string, CollectedJob>();
 
-  const data = (await res.json()) as { data?: { jobs?: JSearchJob[] } };
-  return (data.data?.jobs ?? [])
-    .filter((j) => j.job_id && j.job_title && j.employer_name)
-    .map((j): CollectedJob => {
-      const location = [j.job_city, j.job_state, j.job_country].filter(Boolean).join(', ');
-      return {
-        externalId: j.job_id,
-        source: 'jsearch',
-        companyName: j.employer_name!,
-        title: j.job_title!,
-        location: location || undefined,
-        remoteType: j.job_is_remote ? 'remote' : location ? 'onsite' : 'unknown',
-        description: j.job_description ? stripHtml(j.job_description).slice(0, 8000) : undefined,
-        url: j.job_apply_link ?? '',
-        postedAt: j.job_posted_at_datetime_utc,
-      };
-    })
-    .filter((j) => j.url);
+  for (const query of QUERIES) {
+    // v5 API: the endpoint is /search-v2 (plain /search is v1 and now 404s),
+    // and results nest under data.jobs.
+    const params = new URLSearchParams({
+      query,
+      country: 'in',
+      date_posted: '3days', // daily cadence + small overlap; dedup absorbs repeats
+    });
+    try {
+      const res = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params}`, {
+        headers: {
+          'x-rapidapi-key': key,
+          'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+          accept: 'application/json',
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { data?: { jobs?: JSearchJob[] } };
+
+      for (const j of data.data?.jobs ?? []) {
+        if (!j.job_id || !j.job_title || !j.employer_name || !j.job_apply_link) continue;
+        if (byId.has(j.job_id)) continue; // same role from both queries
+        const location = [j.job_city, j.job_state, j.job_country].filter(Boolean).join(', ');
+        byId.set(j.job_id, {
+          externalId: j.job_id,
+          source: 'jsearch',
+          companyName: j.employer_name,
+          title: j.job_title,
+          location: location || undefined,
+          remoteType: j.job_is_remote ? 'remote' : location ? 'onsite' : 'unknown',
+          description: j.job_description ? stripHtml(j.job_description).slice(0, 8000) : undefined,
+          url: j.job_apply_link,
+          postedAt: j.job_posted_at_datetime_utc,
+        });
+      }
+    } catch (err) {
+      // One query failing must not kill the other (§16 isolation).
+      console.error(`[jsearch] query "${query.slice(0, 40)}…" failed: ${(err as Error).message}`);
+    }
+  }
+  return [...byId.values()];
 }
