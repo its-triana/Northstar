@@ -11,15 +11,10 @@ JDs almost never mention visa sponsorship — **do not look for the word "visa".
    If it restricts to e.g. "US only", "EU only", "Americas": `not_eligible`.
    US-company remote with no stated restriction: check dossier evidence; usually
    `unclear` (many US "remote" roles are US-remote implicitly — say so).
-3. **Global onsite:** judge on two things:
-   - **Country plausibility** (moving from India for a design role):
-     - Plausible: UAE, Singapore, Netherlands, Germany, Ireland, UK, Canada, Australia
-     - Hard/lottery-gated: USA (H-1B; realistic mainly via internal transfer, O-1, cap-exempt)
-     - Rare: Japan, South Korea, most others
-   - **Company evidence** (dossier `hires_from_india`):
-     - India office → likely transfers internally instead of hiring cold from India
-     - Evidence of relocation support / Indian hires who moved *from* India
-     - Listing requires existing local work authorisation → `not_eligible`
+3. **Global onsite: DROPPED (preference update 2026-07-24).** The prefilter now
+   kills non-remote roles located outside India before scoring. If one slips
+   through anyway (missing/odd location data), mark it `not_eligible` — do not
+   spend research on relocation plausibility anymore.
 
 ## Output states
 

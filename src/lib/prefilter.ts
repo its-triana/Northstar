@@ -17,16 +17,25 @@ export interface PrefilterResult {
 const DESIGN_TITLE =
   /\b(product|ux|ui|interaction|experience)\s*[/&-]?\s*(ux|ui)?\s*design(er)?\b|\bdesign\s+lead\b|\b(senior|staff|lead|sr\.?)\s+(product\s+)?designer\b|\bproduct\s+design\b/i;
 
-// Wrong seniority in title kills outright (manager+ and intern/junior tracks).
+// Wrong seniority kills outright: everything ABOVE her targets (staff+, leads-of-leads,
+// managers) and everything below (intern/junior tracks). Targets: Senior PD, PD II, PD III.
+// (Preference update 2026-07-24: staff/sr-staff/group-lead added to the kill list.)
 const WRONG_SENIORITY =
-  /\b(intern|internship|trainee|junior|fresher|freshers|associate|graduate|principal|director|vp|vice\s+president|head\s+of|manager)\b/i;
+  /\b(intern|internship|trainee|junior|fresher|freshers|associate|graduate|staff|principal|group\s+(design\s+)?lead|director|vp|vice\s+president|head\s+of|manager)\b/i;
 
-// India location rule: Indian cities other than NCR/Bengaluru kill NON-remote roles.
-// Global onsite is deliberately NOT killed here — eligibility is the scorer's job (PRD §10).
+// India location rule: Indian cities other than NCR/Bengaluru/Mumbai kill NON-remote roles.
+// (Mumbai added 2026-07-24.)
 const ALLOWED_INDIA =
-  /\b(gurgaon|gurugram|new\s*delhi|delhi|noida|ghaziabad|faridabad|ncr|bengaluru|bangalore)\b/i;
+  /\b(gurgaon|gurugram|new\s*delhi|delhi|noida|ghaziabad|faridabad|ncr|bengaluru|bangalore|mumbai)\b/i;
 const OTHER_INDIA =
-  /\b(mumbai|pune|hyderabad|chennai|kolkata|ahmedabad|jaipur|indore|kochi|cochin|coimbatore|chandigarh|lucknow|surat|vadodara|nagpur|bhopal|mysuru|mysore|thiruvananthapuram|trivandrum|goa)\b/i;
+  /\b(pune|hyderabad|chennai|kolkata|ahmedabad|jaipur|indore|kochi|cochin|coimbatore|chandigarh|lucknow|surat|vadodara|nagpur|bhopal|mysuru|mysore|thiruvananthapuram|trivandrum|goa)\b/i;
+
+// Global onsite: DROPPED per preferences (2026-07-24). A non-remote role located
+// outside India is killed at the door — no more US-onsite cards. Global REMOTE
+// still passes (the scorer judges IST/geo restrictions).
+const INDIA_HINT =
+  /\bindia\b|\b(gurgaon|gurugram|new\s*delhi|delhi|noida|ghaziabad|faridabad|ncr|bengaluru|bangalore|mumbai|pune|hyderabad|chennai|kolkata)\b|,\s*in\b/i;
+const DEFINITELY_NOT_INDIA = /\bunited states\b|\busa\b|\bu\.s\./i;
 
 const MAX_AGE_DAYS = 14;
 
@@ -45,10 +54,27 @@ export function prefilter(
     return { passed: false, reason: `wrong seniority in title: "${seniority[0]}"` };
   }
 
-  // 3. Indian city outside NCR/Bengaluru, and not remote.
+  // 3. Indian city outside NCR/Bengaluru/Mumbai, and not remote.
   const loc = job.location ?? '';
   if (OTHER_INDIA.test(loc) && !ALLOWED_INDIA.test(loc) && job.remoteType !== 'remote') {
     return { passed: false, reason: `non-target Indian city, not remote: "${loc}"` };
+  }
+
+  // 3b. Global onsite — dropped per preferences (2026-07-24). If it has a location,
+  // that location shows no India signal, and the role isn't remote: kill it.
+  if (
+    loc &&
+    job.remoteType !== 'remote' &&
+    (DEFINITELY_NOT_INDIA.test(loc) || !INDIA_HINT.test(loc))
+  ) {
+    return { passed: false, reason: `global onsite (dropped per preferences): "${loc}"` };
+  }
+
+  // 3c. US-restricted remote: her global-remote rule already excludes listings
+  // restricted to countries that exclude India. "Remote · United States" is the
+  // overwhelmingly common case — kill it at the door instead of scoring it.
+  if (loc && job.remoteType === 'remote' && DEFINITELY_NOT_INDIA.test(loc)) {
+    return { passed: false, reason: `US-restricted remote (excludes India): "${loc}"` };
   }
 
   // 4. Stale posting.

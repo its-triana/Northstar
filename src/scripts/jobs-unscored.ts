@@ -10,11 +10,16 @@ const DOSSIER_TTL_DAYS = 60;
 async function main(): Promise<void> {
   const sb = getSupabase();
 
+  // Only ACTIVE (approved/watched) companies enter the scoring queue. Candidate
+  // companies' roles wait behind Ana's approve/reject in #discoveries — the
+  // bouncer stands BEFORE the party (discovery loop, PRD §4). Rejected
+  // companies' stragglers never surface at all.
   const { data: jobs, error } = await sb
     .from('jobs')
-    .select('id, title, location, remote_type, description, url, posted_at, source, company_id, companies(id, name, tier, hq_region)')
+    .select('id, title, location, remote_type, description, url, posted_at, source, company_id, companies!inner(id, name, tier, hq_region, status)')
     .eq('prefilter_passed', true)
     .eq('score_status', 'unscored')
+    .eq('companies.status', 'active')
     .order('first_seen_at', { ascending: false });
   if (error) throw new Error(error.message);
 

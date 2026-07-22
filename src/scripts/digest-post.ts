@@ -39,7 +39,15 @@ async function main(): Promise<void> {
     .order('fit_score', { ascending: false, nullsFirst: false });
   if (error) throw new Error(error.message);
 
-  const visible = (jobs ?? []).filter((j) => j.eligibility !== 'not_eligible');
+  // PRD §12: the digest shows roles scoring >= 6, ranked. Everything below the
+  // bar is stored + auditable but never becomes a card (score_failed is always
+  // shown — a role must never vanish because judgment broke). not_eligible is
+  // suppressed regardless of score.
+  const visible = (jobs ?? []).filter(
+    (j) =>
+      j.eligibility !== 'not_eligible' &&
+      (j.score_status === 'score_failed' || Number(j.fit_score) >= 6),
+  );
   const suppressed = (jobs ?? []).length - visible.length;
 
   // Prefilter kill count over the same window — the §8 transparency footer.
@@ -50,7 +58,7 @@ async function main(): Promise<void> {
     .gte('first_seen_at', since);
 
   if (visible.length === 0) {
-    console.log('[digest] nothing scored in window — posting nothing (silence is information).');
+    console.log(`[digest] nothing cleared the 6.0 bar (${suppressed} below-bar/not-eligible stored) — posting nothing. Silence is information.`);
     return;
   }
 

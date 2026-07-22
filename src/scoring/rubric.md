@@ -36,10 +36,12 @@ Output: **strict JSON only** — no prose, no markdown fences:
    six-day week, micromanagement, or politics/bad-leadership **caps fit_score at 5.9**,
    whatever else is true. Show the role anyway with the reason in `culture_flags`.
    Ana decides, but she decides knowing.
-2. **Level fit:** Ana is ~3 years in, targeting Senior Product Designer. Plain
-   "Product Designer" at a large/high-bar org can map up — fine. Staff/Principal
-   requiring 8+ years is a real gap: score honestly (usually ≤ 6). Design-systems-only
-   and manager roles are not targets.
+2. **Level fit (updated 2026-07-24):** Ana's exact targets are **Senior Product
+   Designer, Product Designer II, Product Designer III**. Plain "Product Designer"
+   at a large/high-bar org can map up — fine. Anything ABOVE the targets (Staff,
+   Sr Staff, Principal, Group Lead, any manager track) is excluded — the prefilter
+   now kills those; if one slips through, score it ≤ 5 and say why.
+   Design-systems-only roles are not targets.
 3. **Comp is a flag, not a filter** — use `salary_band_senior`/`comp_reachable`
    from the dossier; if the band credibly can't reach her target, say so in
    `comp_flag` and reflect it in the score modestly.

@@ -203,13 +203,7 @@ async function main(): Promise<void> {
   }
 
   // ---- 5. Write everything (survivors + kills), Discord only the new survivors
-  const {
-    ensureCandidateCompanies,
-    writeJobs,
-    markNotified,
-    logPoll,
-  } = await import('../lib/store.js');
-  const { postRawList } = await import('../lib/discord.js');
+  const { ensureCandidateCompanies, writeJobs, logPoll } = await import('../lib/store.js');
 
   // ATS companies already exist; portal jobs may introduce new candidate companies.
   const companyIds = new Map(companies.map((c) => [c.name, c.id]));
@@ -225,20 +219,10 @@ async function main(): Promise<void> {
 
   await Promise.all(pollCounts.map((p) => logPoll(p.companyId, p.source, p.count)));
 
-  await postRawList(
-    newSurvivors.slice(0, POST_LIMIT).map((j) => ({
-      company: j.companyName,
-      title: j.title,
-      location: j.location,
-      url: j.url,
-    })),
-  );
-  await markNotified(newSurvivors.slice(0, POST_LIMIT).map((j) => j.id));
-  console.log(
-    newSurvivors.length > 0
-      ? `[collect] posted ${Math.min(newSurvivors.length, POST_LIMIT)} to Discord.`
-      : '[collect] nothing new cleared the bar — posted nothing (silence is information).',
-  );
+  // No raw Discord posting: collection is silent by design (PRD §12 — the ONLY
+  // job cards Ana sees are scored, >= 6, from the digest. The 9am nudge tells
+  // her how many survivors await judgment.)
+  console.log(`[collect] done. ${newSurvivors.length} survivor(s) queued for /score.`);
 }
 
 main().catch((err) => {
